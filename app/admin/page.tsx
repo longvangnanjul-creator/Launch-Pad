@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { isAdmin } from '@/lib/admin';
 
 interface Stats {
   totalUsers: number;
@@ -20,10 +21,27 @@ interface RecentProject {
 }
 
 export default function AdminDashboard() {
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [authorized, setAuthorized] = useState(false);
   const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalProjects: 0, completedProjects: 0, activeProjects: 0 });
   const [projects, setProjects] = useState<RecentProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then((res) => res.json())
+      .then((data) => {
+        const email = data.user?.email || null;
+        setUserEmail(email);
+        if (isAdmin(email)) {
+          setAuthorized(true);
+        } else {
+          setAuthorized(false);
+        }
+      })
+      .catch(() => setAuthorized(false));
+  }, []);
 
   const loadData = useCallback(async () => {
     try {
@@ -42,7 +60,26 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  useEffect(() => { void loadData(); }, [loadData]);
+  useEffect(() => {
+    if (authorized) void loadData();
+  }, [authorized, loadData]);
+
+  if (!authorized) {
+    return (
+      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#f8fafc', fontFamily: 'Arial, sans-serif' }}>
+        <div style={{ textAlign: 'center', padding: 24 }}>
+          <div style={{ fontSize: '56px', marginBottom: '16px' }}>🔒</div>
+          <h1 style={{ fontSize: '28px', marginBottom: '12px' }}>Access Denied</h1>
+          <p style={{ color: '#64748b', marginBottom: '24px' }}>
+            {userEmail ? `The account ${userEmail} does not have admin access.` : 'Please log in to continue.'}
+          </p>
+          <Link href="/dashboard" style={{ padding: '12px 24px', borderRadius: '9px', background: '#0f172a', color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' }}>
+            Back to Dashboard
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   if (loading) return <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#f8fafc', fontFamily: 'Arial, sans-serif' }}><p style={{ color: '#64748b' }}>Loading admin dashboard...</p></main>;
 
@@ -54,7 +91,7 @@ export default function AdminDashboard() {
       </nav>
       <section style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 20px 80px' }}>
         <h1 style={{ fontSize: '32px', margin: '0 0 8px' }}>Platform Overview</h1>
-        <p style={{ color: '#64748b', marginBottom: '32px' }}>Manage users, projects, and monitor platform activity.</p>
+        <p style={{ color: '#64748b', marginBottom: '32px' }}>Signed in as {userEmail}</p>
 
         {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '14px', borderRadius: '10px', marginBottom: '24px' }}>{error}</div>}
 

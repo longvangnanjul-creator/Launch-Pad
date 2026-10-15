@@ -362,6 +362,23 @@ export default function Dashboard() {
             {user.name || user.email}
           </span>
 
+          {user && user.email === 'longvangnanjul@gmail.com' && (
+            <button
+              onClick={() => router.push('/admin')}
+              style={{
+                padding: '9px 16px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '8px',
+                background: '#ffffff',
+                color: '#0f172a',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              Admin
+            </button>
+          )}
+
           <button
             onClick={() => router.push('/settings')}
             style={{
