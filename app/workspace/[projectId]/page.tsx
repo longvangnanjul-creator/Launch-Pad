@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import DownloadPdfButton from '@/app/components/DownloadPdfButton';
 
 interface QuestionTurn {
   id: string;
@@ -322,7 +323,7 @@ function WorkspaceContent() {
 
   return (
     <main style={{ height: '100vh', background: '#f8fafc', fontFamily: 'Arial, sans-serif', color: '#0f172a', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', background: '#ffffff', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
+      <nav className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', background: '#ffffff', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button onClick={() => router.push('/dashboard')} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#ffffff', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>Back</button>
           <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#0f172a' }}>LaunchKit<span style={{ color: '#2563eb' }}>.</span></span>
@@ -335,6 +336,7 @@ function WorkspaceContent() {
           <Link href={`/business/${projectId}/marketing`} style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', color: '#0f172a', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' }}>Marketing</Link>
           <Link href={`/business/${projectId}/launch-score`} style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', color: '#0f172a', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' }}>Launch Score</Link>
           <Link href={`/business/${projectId}/tools`} style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', color: '#0f172a', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' }}>Tools</Link>
+          <DownloadPdfButton />
           <button onClick={openEditModal} style={{ padding: '8px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#ffffff', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>Edit</button>
           {project.status === 'completed' && (
             <Link href={`/report/${projectId}`} style={{ padding: '9px 18px', borderRadius: '8px', background: '#2563eb', color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' }}>View Report</Link>

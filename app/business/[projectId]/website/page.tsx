@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import DownloadPdfButton from '@/app/components/DownloadPdfButton';
 
 interface WebsiteSection {
   type: string;
@@ -73,7 +74,7 @@ function WebsitePageContent() {
 
   return (
     <main style={{ minHeight: '100vh', background: '#f8fafc', color: '#0f172a', fontFamily: 'Arial, sans-serif' }}>
-      <nav style={{ padding: '20px clamp(20px, 6vw, 80px)', background: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      <nav className="no-print" style={{ padding: '20px clamp(20px, 6vw, 80px)', background: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 23, fontWeight: 800 }}>LaunchKit<span style={{ color: '#2563eb' }}>.</span></span>
         <div style={{ display: 'flex', gap: '12px' }}>
           <Link href={`/workspace/${params.projectId}`} style={{ color: '#475569', textDecoration: 'none', fontSize: 14 }}>Workspace</Link>
@@ -101,9 +102,12 @@ function WebsitePageContent() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <h2 style={{ margin: 0, fontSize: '22px' }}>Your Website Structure</h2>
-              <button onClick={generateWebsite} disabled={generating} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', color: '#0f172a', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>
-                {generating ? 'Generating...' : 'Regenerate'}
-              </button>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button onClick={generateWebsite} disabled={generating} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', color: '#0f172a', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>
+                  {generating ? 'Generating...' : 'Regenerate'}
+                </button>
+                <DownloadPdfButton />
+              </div>
             </div>
 
             {/* Style Notes */}

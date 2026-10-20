@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import DownloadPdfButton from '@/app/components/DownloadPdfButton';
 
 interface ContentPlanItem {
   day: number;
@@ -85,7 +86,7 @@ function MarketingPageContent() {
 
   return (
     <main style={{ minHeight: '100vh', background: '#f8fafc', color: '#0f172a', fontFamily: 'Arial, sans-serif' }}>
-      <nav style={{ padding: '20px clamp(20px, 6vw, 80px)', background: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      <nav className="no-print" style={{ padding: '20px clamp(20px, 6vw, 80px)', background: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 23, fontWeight: 800 }}>LaunchKit<span style={{ color: '#2563eb' }}>.</span></span>
         <div style={{ display: 'flex', gap: '12px' }}>
           <Link href={`/workspace/${params.projectId}`} style={{ color: '#475569', textDecoration: 'none', fontSize: 14 }}>Workspace</Link>
@@ -113,9 +114,12 @@ function MarketingPageContent() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <h2 style={{ margin: 0, fontSize: '22px' }}>Your Marketing Plan</h2>
-              <button onClick={generateMarketing} disabled={generating} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', color: '#0f172a', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>
-                {generating ? 'Generating...' : 'Regenerate'}
-              </button>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button onClick={generateMarketing} disabled={generating} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', color: '#0f172a', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>
+                  {generating ? 'Generating...' : 'Regenerate'}
+                </button>
+                <DownloadPdfButton />
+              </div>
             </div>
 
             {/* Strategy */}
@@ -149,65 +153,57 @@ function MarketingPageContent() {
               ))}
             </div>
 
-            {/* Tab Content */}
-            {activeTab === 'content' && (
-              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px' }}>
-                <h3 style={{ margin: '0 0 16px', fontSize: '18px' }}>30-Day Content Plan</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {marketing.contentPlan?.map((item) => (
-                    <div key={item.day} style={{ padding: '14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                      <div style={{ flexShrink: 0, width: '50px', textAlign: 'center' }}>
-                        <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#2563eb' }}>Day {item.day}</span>
+            {/* Tab Content — all panels are rendered so the PDF contains the full plan */}
+            <div className="print-panel" hidden={activeTab !== 'content'} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px' }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '18px' }}>30-Day Content Plan</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {marketing.contentPlan?.map((item) => (
+                  <div key={item.day} style={{ padding: '14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                    <div style={{ flexShrink: 0, width: '50px', textAlign: 'center' }}>
+                      <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#2563eb' }}>Day {item.day}</span>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{ padding: '3px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 'bold', background: '#dbeafe', color: '#1d4ed8' }}>{item.type}</span>
+                        <strong style={{ fontSize: '14px' }}>{item.topic}</strong>
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                          <span style={{ padding: '3px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 'bold', background: '#dbeafe', color: '#1d4ed8' }}>{item.type}</span>
-                          <strong style={{ fontSize: '14px' }}>{item.topic}</strong>
-                        </div>
-                        <p style={{ margin: 0, color: '#475569', fontSize: '13px', lineHeight: 1.5 }}>{item.caption}</p>
-                      </div>
+                      <p style={{ margin: 0, color: '#475569', fontSize: '13px', lineHeight: 1.5 }}>{item.caption}</p>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
 
-            {activeTab === 'ads' && (
-              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px' }}>
-                <h3 style={{ margin: '0 0 16px', fontSize: '18px' }}>Ad Concepts</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
-                  {marketing.adConcepts?.map((ad, i) => (
-                    <div key={i} style={{ padding: '20px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                      <h4 style={{ margin: '0 0 8px', fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>{ad.headline}</h4>
-                      <p style={{ margin: '0 0 12px', color: '#475569', fontSize: '13px', lineHeight: 1.6 }}>{ad.body}</p>
-                      <span style={{ padding: '6px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 'bold', background: '#2563eb', color: '#fff' }}>{ad.cta}</span>
-                    </div>
-                  ))}
-                </div>
+            <div className="print-panel" hidden={activeTab !== 'ads'} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px' }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '18px' }}>Ad Concepts</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
+                {marketing.adConcepts?.map((ad, i) => (
+                  <div key={i} style={{ padding: '20px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <h4 style={{ margin: '0 0 8px', fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>{ad.headline}</h4>
+                    <p style={{ margin: '0 0 12px', color: '#475569', fontSize: '13px', lineHeight: 1.6 }}>{ad.body}</p>
+                    <span style={{ padding: '6px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 'bold', background: '#2563eb', color: '#fff' }}>{ad.cta}</span>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
 
-            {activeTab === 'emails' && (
-              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px' }}>
-                <h3 style={{ margin: '0 0 16px', fontSize: '18px' }}>Email Campaigns</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {marketing.emailCampaigns?.map((email, i) => (
-                    <div key={i} style={{ padding: '18px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                      <h4 style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 'bold' }}>{email.subject}</h4>
-                      <p style={{ margin: '0 0 6px', color: '#2563eb', fontSize: '12px', fontWeight: '600' }}>{email.purpose}</p>
-                      <p style={{ margin: 0, color: '#475569', fontSize: '13px', lineHeight: 1.6 }}>{email.body}</p>
-                    </div>
-                  ))}
-                </div>
+            <div className="print-panel" hidden={activeTab !== 'emails'} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px' }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '18px' }}>Email Campaigns</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {marketing.emailCampaigns?.map((email, i) => (
+                  <div key={i} style={{ padding: '18px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                    <h4 style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 'bold' }}>{email.subject}</h4>
+                    <p style={{ margin: '0 0 6px', color: '#2563eb', fontSize: '12px', fontWeight: '600' }}>{email.purpose}</p>
+                    <p style={{ margin: 0, color: '#475569', fontSize: '13px', lineHeight: 1.6 }}>{email.body}</p>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
 
-            {activeTab === 'launch' && (
-              <div style={{ background: '#0f172a', color: '#fff', borderRadius: '16px', padding: '28px' }}>
-                <p style={{ margin: '0 0 12px', color: '#93c5fd', textTransform: 'uppercase', letterSpacing: 1.4, fontSize: '11px', fontWeight: 800 }}>Launch Campaign</p>
-                <p style={{ margin: 0, color: '#cbd5e1', lineHeight: 1.9, fontSize: '15px' }}>{marketing.launchCampaign || 'No launch campaign available.'}</p>
-              </div>
-            )}
+            <div className="print-panel" hidden={activeTab !== 'launch'} style={{ background: '#0f172a', color: '#fff', borderRadius: '16px', padding: '28px' }}>
+              <p style={{ margin: '0 0 12px', color: '#93c5fd', textTransform: 'uppercase', letterSpacing: 1.4, fontSize: '11px', fontWeight: 800 }}>Launch Campaign</p>
+              <p style={{ margin: 0, color: '#cbd5e1', lineHeight: 1.9, fontSize: '15px' }}>{marketing.launchCampaign || 'No launch campaign available.'}</p>
+            </div>
           </div>
         )}
       </section>

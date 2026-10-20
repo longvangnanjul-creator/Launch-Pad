@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import DownloadPdfButton from '@/app/components/DownloadPdfButton';
 
 interface ToolsData {
   invoiceTemplate?: string;
@@ -144,7 +145,7 @@ function ToolsPageContent() {
 
   return (
     <main style={{ minHeight: '100vh', background: '#f8fafc', color: '#0f172a', fontFamily: 'Arial, sans-serif' }}>
-      <nav style={{ padding: '20px clamp(20px, 6vw, 80px)', background: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      <nav className="no-print" style={{ padding: '20px clamp(20px, 6vw, 80px)', background: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 23, fontWeight: 800 }}>LaunchKit<span style={{ color: '#2563eb' }}>.</span></span>
         <div style={{ display: 'flex', gap: '12px' }}>
           <Link href={`/workspace/${params.projectId}`} style={{ color: '#475569', textDecoration: 'none', fontSize: 14 }}>Workspace</Link>
@@ -153,9 +154,14 @@ function ToolsPageContent() {
       </nav>
 
       <section style={{ maxWidth: 900, margin: '0 auto', padding: '48px 20px 80px' }}>
-        <p style={{ margin: '0 0 10px', color: '#2563eb', textTransform: 'uppercase', fontSize: 12, letterSpacing: 1.7, fontWeight: 800 }}>Business Tools</p>
-        <h1 style={{ fontSize: 'clamp(30px, 5vw, 44px)', letterSpacing: '-1.4px', margin: '0 0 8px' }}>Tools & Services</h1>
-        <p style={{ color: '#64748b', marginBottom: '32px', maxWidth: 600, lineHeight: 1.7 }}>Business tools, templates, calculators, and expert services to help you launch.</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <p style={{ margin: '0 0 10px', color: '#2563eb', textTransform: 'uppercase', fontSize: 12, letterSpacing: 1.7, fontWeight: 800 }}>Business Tools</p>
+            <h1 style={{ fontSize: 'clamp(30px, 5vw, 44px)', letterSpacing: '-1.4px', margin: '0 0 8px' }}>Tools & Services</h1>
+            <p style={{ color: '#64748b', maxWidth: 600, lineHeight: 1.7 }}>Business tools, templates, calculators, and expert services to help you launch.</p>
+          </div>
+          <DownloadPdfButton />
+        </div>
 
         {message && <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '14px', borderRadius: '10px', marginBottom: '24px' }}>{message}</div>}
         {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '14px', borderRadius: '10px', marginBottom: '24px' }}>{error}</div>}
