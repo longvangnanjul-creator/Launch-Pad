@@ -26,7 +26,7 @@ export async function POST(request: Request, { params }: Params) {
     const { projectId } = await params;
     const body = await request.json();
 
-    const serviceType = typeof body.serviceType === 'string' ? body.serviceType : '';
+    const serviceType = typeof body.serviceType === 'string' ? body.serviceType.trim() : '';
     const description = typeof body.description === 'string' ? body.description.trim() : '';
     const budget = typeof body.budget === 'string' ? body.budget.trim() : '';
     const timeline = typeof body.timeline === 'string' ? body.timeline.trim() : '';
@@ -35,7 +35,7 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ error: 'Service type and description are required.' }, { status: 400 });
     }
 
-    // Store service request in a JSONB column on the project (or create a separate table)
+    // Verify project belongs to user
     const { data: project, error: projectError } = await supabaseAdmin
       .from('projects')
       .select('id')
@@ -47,23 +47,58 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // Save service request as a finding with special stage
-    const { error: insertError } = await supabaseAdmin
-      .from('findings')
+    // Save to service_requests table (admin receives these)
+    const { data: createdRequest, error: insertError } = await supabaseAdmin
+      .from('service_requests')
       .insert({
         project_id: projectId,
-        stage: 'service_request',
-        kind: 'user_decision',
-        text: `Service Request: ${serviceType}. ${description}. Budget: ${budget || 'Not specified'}. Timeline: ${timeline || 'Not specified'}.`,
-      });
+        user_id: userId,
+        service_type: serviceType,
+        description,
+        budget,
+        timeline,
+      })
+      .select()
+      .single();
 
     if (insertError) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: 'Service request submitted. Our team will review it and connect you with an expert.' });
+    return NextResponse.json({
+      success: true,
+      request: createdRequest,
+      message: 'Service request submitted. Our team will review it and connect you with an expert.',
+    });
   } catch (err) {
     console.error('Service request error:', err);
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+  }
+}
+
+// GET /api/projects/[projectId]/service-request - List user's requests
+export async function GET(_request: Request, { params }: Params) {
+  const supabaseAdmin = getSupabaseAdmin();
+  if (!supabaseAdmin) return NextResponse.json({ error: 'Supabase server configuration is missing.' }, { status: 500 });
+
+  try {
+    const userId = await getUserId(supabaseAdmin);
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { projectId } = await params;
+
+    const { data: requests, error } = await supabaseAdmin
+      .from('service_requests')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ requests: requests || [] });
+  } catch (err) {
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }

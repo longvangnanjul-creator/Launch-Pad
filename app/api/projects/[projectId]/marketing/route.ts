@@ -43,8 +43,48 @@ export async function GET(_request: Request, { params }: Params) {
   }
 }
 
+function buildFallbackMarketing(context: Record<string, unknown>) {
+  const name = (context.brandName as string) || (context.title as string);
+  const target = (context.targetMarket as string) || 'your target customers';
+  const solution = (context.solution as string) || (context.description as string);
+  const tagline = (context.tagline as string) || solution;
+
+  return {
+    strategy: `${name} will use a multi-channel marketing approach focused on building awareness, generating leads, and converting customers through valuable content and strategic advertising.`,
+    targetAudience: `Primary audience: ${target}. Reach them through social media, content marketing, and targeted advertising.`,
+    channels: ['Instagram', 'Facebook', 'Google Ads', 'Email Marketing', 'Content Marketing'],
+    contentPlan: [
+      { day: 1, type: 'Introduction', topic: `Introducing ${name}`, caption: `Meet ${name} — ${tagline}` },
+      { day: 2, type: 'Problem Awareness', topic: 'The problem we solve', caption: `Did you know? ${(context.problem as string) || 'Many people struggle with this every day.'}` },
+      { day: 3, type: 'Educational', topic: 'Tips and insights', caption: `Here's a quick tip that could make a big difference for ${target}.` },
+      { day: 4, type: 'Product Benefit', topic: 'Key benefit', caption: `Discover how ${name} can help you achieve more with less effort.` },
+      { day: 5, type: 'Customer Problem', topic: 'Real pain point', caption: `We understand the frustration. That's why we built ${name}.` },
+      { day: 6, type: 'Behind the Scenes', topic: 'Our story', caption: `Ever wondered what goes into making ${name}? Here's a peek behind the scenes.` },
+      { day: 7, type: 'Social Proof', topic: 'Testimonial Tuesday', caption: `Don't just take our word for it — here's what others are saying.` },
+      { day: 8, type: 'Educational', topic: 'How-to guide', caption: `Step-by-step guide: Get the most out of ${name}.` },
+      { day: 9, type: 'Engagement', topic: 'Poll or question', caption: `We want to hear from you! What's your biggest challenge?` },
+      { day: 10, type: 'Product Feature', topic: 'Feature highlight', caption: `Feature spotlight: Here's what makes ${name} different.` },
+      { day: 14, type: 'Case Study', topic: 'Success story', caption: `See how ${name} helped someone just like you achieve their goals.` },
+      { day: 21, type: 'Promotion', topic: 'Special offer', caption: `Limited time offer: Get started with ${name} today!` },
+      { day: 30, type: 'Launch', topic: 'Launch announcement', caption: `The wait is over! ${name} is officially here. Join us today!` },
+    ],
+    adConcepts: [
+      { headline: `Introducing ${name}`, body: `${tagline}. The smarter way to get results.`, cta: 'Learn More' },
+      { headline: 'Tired of the old way?', body: `${name} makes it easier, faster, and better. See the difference for yourself.`, cta: 'Try It Now' },
+      { headline: `Join ${target} who trust ${name}`, body: `Discover why ${name} is the choice for people who demand quality.`, cta: 'Get Started' },
+    ],
+    emailCampaigns: [
+      { subject: `Welcome to ${name}!`, purpose: 'Welcome new subscribers and introduce the brand', body: 'Welcome email with brand story, value proposition, and first call to action.' },
+      { subject: 'Your exclusive offer inside', purpose: 'Nurture leads with a special offer or discount', body: 'Promotional email with limited-time offer, urgency, and clear CTA.' },
+      { subject: `Tips to get the most from ${name}`, purpose: 'Provide value and keep the brand top-of-mind', body: 'Educational email with tips, best practices, and product usage advice.' },
+      { subject: "We miss you — here's 20% off", purpose: 'Re-engage inactive subscribers or customers', body: 'Win-back email with special discount and reminder of the value proposition.' },
+    ],
+    launchCampaign: `A 2-week launch campaign for ${name}: Week 1 — Tease the launch on social media with behind-the-scenes content and waitlist signup. Week 2 — Announce the launch with a special offer, coordinate across all channels, run a launch event or webinar, and follow up with email marketing. Leverage the 30-day content plan to maintain momentum post-launch.`,
+  };
+}
+
 // POST /api/projects/[projectId]/marketing - Generate marketing plan
-export async function POST(request: Request, { params }: Params) {
+export async function POST(_request: Request, { params }: Params) {
   const supabaseAdmin = getSupabaseAdmin();
   if (!supabaseAdmin) return NextResponse.json({ error: 'Supabase server configuration is missing.' }, { status: 500 });
 
@@ -67,7 +107,7 @@ export async function POST(request: Request, { params }: Params) {
     // Build context from project data, blueprint, and brand
     const blueprint = project.business_blueprint || {};
     const brand = project.business_brand || {};
-    const context = {
+    const context: Record<string, unknown> = {
       title: project.title,
       description: project.description,
       concept: blueprint.concept || '',
@@ -83,14 +123,14 @@ export async function POST(request: Request, { params }: Params) {
     };
 
     let marketingData: Record<string, unknown>;
-
-    if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'REPLACE_WITH_YOUR_OPENAI_API_KEY') {
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a marketing strategist. Generate a complete marketing plan for this business. Return JSON only with this structure:
+    try {
+      if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'REPLACE_WITH_YOUR_OPENAI_API_KEY') {
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a marketing strategist. Generate a complete marketing plan for this business. Return JSON only with this structure:
 {
   "strategy": "string — overall marketing strategy summary",
   "targetAudience": "string — who to reach and where",
@@ -106,54 +146,22 @@ export async function POST(request: Request, { params }: Params) {
   ],
   "launchCampaign": "string describing the launch campaign approach"
 }`,
-          },
-          { role: 'user', content: JSON.stringify(context) },
-        ],
-        temperature: 0.7,
-        max_tokens: 3000,
-        response_format: { type: 'json_object' },
-      });
+            },
+            { role: 'user', content: JSON.stringify(context) },
+          ],
+          temperature: 0.7,
+          max_tokens: 3000,
+          response_format: { type: 'json_object' },
+        });
 
-      const raw = response.choices[0]?.message?.content || '{}';
-      marketingData = JSON.parse(raw);
-    } else {
-      // Fallback marketing generation
-      const name = context.brandName || context.title;
-      const target = context.targetMarket || 'your target customers';
-      const solution = context.solution || context.description;
-
-      marketingData = {
-        strategy: `${name} will use a multi-channel marketing approach focused on building awareness, generating leads, and converting customers through valuable content and strategic advertising.`,
-        targetAudience: `Primary audience: ${target}. Reach them through social media, content marketing, and targeted advertising.`,
-        channels: ['Instagram', 'Facebook', 'Google Ads', 'Email Marketing', 'Content Marketing'],
-        contentPlan: [
-          { day: 1, type: 'Introduction', topic: `Introducing ${name}`, caption: `Meet ${name} — ${context.tagline || solution}` },
-          { day: 2, type: 'Problem Awareness', topic: 'The problem we solve', caption: `Did you know? ${context.problem || 'Many people struggle with this every day.'}` },
-          { day: 3, type: 'Educational', topic: 'Tips and insights', caption: `Here's a quick tip that could make a big difference for ${target}.` },
-          { day: 4, type: 'Product Benefit', topic: 'Key benefit', caption: `Discover how ${name} can help you achieve more with less effort.` },
-          { day: 5, type: 'Customer Problem', topic: 'Real pain point', caption: `We understand the frustration. That's why we built ${name}.` },
-          { day: 6, type: 'Behind the Scenes', topic: 'Our story', caption: `Ever wondered what goes into making ${name}? Here's a peek behind the scenes.` },
-          { day: 7, type: 'Social Proof', topic: 'Testimonial Tuesday', caption: `Don't just take our word for it — here's what others are saying.` },
-          { day: 8, type: 'Educational', topic: 'How-to guide', caption: `Step-by-step guide: Get the most out of ${name}.` },
-          { day: 9, type: 'Engagement', topic: 'Poll or question', caption: `We want to hear from you! What's your biggest challenge?` },
-          { day: 10, type: 'Product Feature', topic: 'Feature highlight', caption: `Feature spotlight: Here's what makes ${name} different.` },
-          { day: 14, type: 'Case Study', topic: 'Success story', caption: `See how ${name} helped someone just like you achieve their goals.` },
-          { day: 21, type: 'Promotion', topic: 'Special offer', caption: `Limited time offer: Get started with ${name} today!` },
-          { day: 30, type: 'Launch', topic: 'Launch announcement', caption: `The wait is over! ${name} is officially here. Join us today!` },
-        ],
-        adConcepts: [
-          { headline: `Introducing ${name}`, body: `${context.tagline || solution}. The smarter way to get results.`, cta: 'Learn More' },
-          { headline: `Tired of the old way?`, body: `${name} makes it easier, faster, and better. See the difference for yourself.`, cta: 'Try It Now' },
-          { headline: `Join ${target} who trust ${name}`, body: `Discover why ${name} is the choice for people who demand quality.`, cta: 'Get Started' },
-        ],
-        emailCampaigns: [
-          { subject: `Welcome to ${name}!`, purpose: 'Welcome new subscribers and introduce the brand', body: 'Welcome email with brand story, value proposition, and first call to action.' },
-          { subject: `Your exclusive offer inside`, purpose: 'Nurture leads with a special offer or discount', body: 'Promotional email with limited-time offer, urgency, and clear CTA.' },
-          { subject: `Tips to get the most from ${name}`, purpose: 'Provide value and keep the brand top-of-mind', body: 'Educational email with tips, best practices, and product usage advice.' },
-          { subject: `We miss you — here's 20% off`, purpose: 'Re-engage inactive subscribers or customers', body: 'Win-back email with special discount and reminder of the value proposition.' },
-        ],
-        launchCampaign: `A 2-week launch campaign for ${name}: Week 1 — Tease the launch on social media with behind-the-scenes content and waitlist signup. Week 2 — Announce the launch with a special offer, coordinate across all channels, run a launch event or webinar, and follow up with email marketing. Leverage the 30-day content plan to maintain momentum post-launch.`,
-      };
+        const raw = response.choices[0]?.message?.content || '{}';
+        marketingData = JSON.parse(raw);
+      } else {
+        marketingData = buildFallbackMarketing(context);
+      }
+    } catch (aiError) {
+      console.error('OpenAI marketing generation failed, using fallback:', aiError);
+      marketingData = buildFallbackMarketing(context);
     }
 
     // Save marketing data to project

@@ -44,7 +44,7 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 // POST /api/projects/[projectId]/website - Generate website
-export async function POST(request: Request, { params }: Params) {
+export async function POST(_request: Request, { params }: Params) {
   const supabaseAdmin = getSupabaseAdmin();
   if (!supabaseAdmin) return NextResponse.json({ error: 'Supabase server configuration is missing.' }, { status: 500 });
 
@@ -82,15 +82,56 @@ export async function POST(request: Request, { params }: Params) {
       businessType: project.business_details?.businessType || '',
     };
 
-    let websiteData: Record<string, unknown>;
+    const buildFallbackWebsite = () => ({
+      pages: [
+        {
+          name: 'Home',
+          slug: '/',
+          sections: [
+            { type: 'hero', heading: context.brandName || context.title, subheading: context.tagline || context.description, body: `Welcome to ${context.brandName || context.title}. ${context.solution || context.description}` },
+            { type: 'features', heading: 'What We Offer', subheading: 'Our core services and products', body: context.solution || context.description },
+            { type: 'about', heading: 'About Us', subheading: 'Our story and mission', body: context.concept || context.description },
+            { type: 'cta', heading: 'Get Started', subheading: 'Ready to begin?', body: `Contact us today to learn more about ${context.brandName || context.title}.` },
+          ],
+        },
+        {
+          name: 'About',
+          slug: '/about',
+          sections: [
+            { type: 'about', heading: 'Our Story', subheading: 'How we started', body: context.concept || `${context.brandName || context.title} was founded to solve a real problem.` },
+            { type: 'features', heading: 'Our Values', subheading: 'What we stand for', body: 'Quality, integrity, and customer satisfaction drive everything we do.' },
+          ],
+        },
+        {
+          name: 'Services',
+          slug: '/services',
+          sections: [
+            { type: 'features', heading: 'Our Services', subheading: 'What we provide', body: context.solution || context.description },
+            { type: 'pricing', heading: 'Pricing', subheading: 'Simple, transparent pricing', body: 'Contact us for a customized quote based on your needs.' },
+          ],
+        },
+        {
+          name: 'Contact',
+          slug: '/contact',
+          sections: [
+            { type: 'contact', heading: 'Get In Touch', subheading: 'We would love to hear from you', body: `Reach out to ${context.brandName || context.title} for inquiries, partnerships, or support.` },
+            { type: 'faq', heading: 'Frequently Asked Questions', subheading: 'Common questions answered', body: 'Find answers to the most common questions about our services.' },
+          ],
+        },
+      ],
+      colorScheme: 'Clean, modern design using the brand colors. Professional and trustworthy.',
+      styleNotes: 'Modern, clean, and professional. Mobile-responsive with clear navigation and strong calls-to-action.',
+    });
 
-    if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'REPLACE_WITH_YOUR_OPENAI_API_KEY') {
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a web designer and copywriter. Generate a complete website structure for this business. Return JSON only with this structure:
+    let websiteData: Record<string, unknown>;
+    try {
+      if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'REPLACE_WITH_YOUR_OPENAI_API_KEY') {
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a web designer and copywriter. Generate a complete website structure for this business. Return JSON only with this structure:
 {
   "pages": [
     {
@@ -109,58 +150,22 @@ export async function POST(request: Request, { params }: Params) {
   "colorScheme": "brief description of the website color scheme",
   "styleNotes": "brief description of the overall website style and feel"
 }`,
-          },
-          { role: 'user', content: JSON.stringify(context) },
-        ],
-        temperature: 0.7,
-        max_tokens: 3000,
-        response_format: { type: 'json_object' },
-      });
+            },
+            { role: 'user', content: JSON.stringify(context) },
+          ],
+          temperature: 0.7,
+          max_tokens: 3000,
+          response_format: { type: 'json_object' },
+        });
 
-      const raw = response.choices[0]?.message?.content || '{}';
-      websiteData = JSON.parse(raw);
-    } else {
-      // Fallback website generation
-      websiteData = {
-        pages: [
-          {
-            name: 'Home',
-            slug: '/',
-            sections: [
-              { type: 'hero', heading: context.brandName || context.title, subheading: context.tagline || context.description, body: `Welcome to ${context.brandName || context.title}. ${context.solution || context.description}` },
-              { type: 'features', heading: 'What We Offer', subheading: 'Our core services and products', body: context.solution || context.description },
-              { type: 'about', heading: 'About Us', subheading: 'Our story and mission', body: context.concept || context.description },
-              { type: 'cta', heading: 'Get Started', subheading: 'Ready to begin?', body: `Contact us today to learn more about ${context.brandName || context.title}.` },
-            ],
-          },
-          {
-            name: 'About',
-            slug: '/about',
-            sections: [
-              { type: 'about', heading: 'Our Story', subheading: 'How we started', body: context.concept || `${context.brandName || context.title} was founded to solve a real problem.` },
-              { type: 'features', heading: 'Our Values', subheading: 'What we stand for', body: 'Quality, integrity, and customer satisfaction drive everything we do.' },
-            ],
-          },
-          {
-            name: 'Services',
-            slug: '/services',
-            sections: [
-              { type: 'features', heading: 'Our Services', subheading: 'What we provide', body: context.solution || context.description },
-              { type: 'pricing', heading: 'Pricing', subheading: 'Simple, transparent pricing', body: 'Contact us for a customized quote based on your needs.' },
-            ],
-          },
-          {
-            name: 'Contact',
-            slug: '/contact',
-            sections: [
-              { type: 'contact', heading: 'Get In Touch', subheading: 'We would love to hear from you', body: `Reach out to ${context.brandName || context.title} for inquiries, partnerships, or support.` },
-              { type: 'faq', heading: 'Frequently Asked Questions', subheading: 'Common questions answered', body: 'Find answers to the most common questions about our services.' },
-            ],
-          },
-        ],
-        colorScheme: 'Clean, modern design using the brand colors. Professional and trustworthy.',
-        styleNotes: 'Modern, clean, and professional. Mobile-responsive with clear navigation and strong calls-to-action.',
-      };
+        const raw = response.choices[0]?.message?.content || '{}';
+        websiteData = JSON.parse(raw);
+      } else {
+        websiteData = buildFallbackWebsite();
+      }
+    } catch (aiError) {
+      console.error('OpenAI website generation failed, using fallback:', aiError);
+      websiteData = buildFallbackWebsite();
     }
 
     // Save website data to project

@@ -20,13 +20,28 @@ interface RecentProject {
   created_at: string;
 }
 
+interface ServiceRequest {
+  id: string;
+  project_id: string;
+  user_id: string;
+  service_type: string;
+  description: string;
+  budget: string | null;
+  timeline: string | null;
+  status: string;
+  created_at: string;
+  projects: { title: string } | null;
+}
+
 export default function AdminDashboard() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authorized, setAuthorized] = useState(false);
   const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalProjects: 0, completedProjects: 0, activeProjects: 0 });
   const [projects, setProjects] = useState<RecentProject[]>([]);
+  const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [updatingRequest, setUpdatingRequest] = useState('');
 
   useEffect(() => {
     fetch('/api/auth/session')
@@ -45,20 +60,43 @@ export default function AdminDashboard() {
 
   const loadData = useCallback(async () => {
     try {
-      const [statsRes, projectsRes] = await Promise.all([
+      const [statsRes, projectsRes, requestsRes] = await Promise.all([
         fetch('/api/admin/stats'),
         fetch('/api/admin/projects'),
+        fetch('/api/admin/service-requests'),
       ]);
       const statsData = await statsRes.json();
       const projectsData = await projectsRes.json();
+      const requestsData = await requestsRes.json();
       if (statsRes.ok) setStats(statsData.stats);
       if (projectsRes.ok) setProjects(projectsData.projects || []);
+      if (requestsRes.ok) setServiceRequests(requestsData.requests || []);
     } catch {
       setError('Failed to load admin data');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const updateRequestStatus = async (requestId: string, status: string) => {
+    setUpdatingRequest(requestId);
+    try {
+      const res = await fetch(`/api/admin/service-requests/${requestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        setServiceRequests((prev) =>
+          prev.map((r) => (r.id === requestId ? { ...r, status } : r))
+        );
+      }
+    } catch {
+      // ignore
+    } finally {
+      setUpdatingRequest('');
+    }
+  };
 
   useEffect(() => {
     if (authorized) void loadData();
@@ -140,6 +178,58 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        <h2 style={{ fontSize: '22px', margin: '40px 0 16px' }}>Service Requests ({serviceRequests.length})</h2>
+        {serviceRequests.length === 0 ? (
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '40px', textAlign: 'center' }}>
+            <p style={{ color: '#64748b' }}>No service requests yet. Requests from users will appear here.</p>
+          </div>
+        ) : (
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>Service</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>Project</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>Budget</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>Timeline</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>Status</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>Received</th>
+                </tr>
+              </thead>
+              <tbody>
+                {serviceRequests.map((req) => (
+                  <tr key={req.id} style={{ borderBottom: '1px solid #f1f5f9', verticalAlign: 'top' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>{req.service_type}</td>
+                    <td style={{ padding: '12px 16px', color: '#475569' }}>{req.projects?.title || '—'}</td>
+                    <td style={{ padding: '12px 16px', color: '#475569' }}>{req.budget || '—'}</td>
+                    <td style={{ padding: '12px 16px', color: '#475569' }}>{req.timeline || '—'}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <select
+                        value={req.status}
+                        disabled={updatingRequest === req.id}
+                        onChange={(e) => updateRequestStatus(req.id, e.target.value)}
+                        style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#fff', cursor: 'pointer' }}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </td>
+                    <td style={{ padding: '12px 16px', color: '#64748b' }}>{new Date(req.created_at).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {serviceRequests.some((r) => r.status === 'pending') && (
+          <div style={{ marginTop: '12px', padding: '12px 16px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', fontSize: '13px', color: '#92400e' }}>
+            {serviceRequests.filter((r) => r.status === 'pending').length} pending request(s) waiting for your review.
           </div>
         )}
       </section>
