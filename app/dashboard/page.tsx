@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import InstallAppButton from '@/app/components/InstallAppButton'
 
 interface User {
   id: string
@@ -378,6 +379,8 @@ export default function Dashboard() {
               Admin
             </button>
           )}
+
+          <InstallAppButton />
 
           <button
             onClick={() => router.push('/settings')}

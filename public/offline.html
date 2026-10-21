@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline | LaunchKit</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #f8fafc;
+        color: #0f172a;
+        font-family: Arial, Helvetica, sans-serif;
+        padding: 24px;
+      }
+      .card {
+        max-width: 420px;
+        text-align: center;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        padding: 48px 32px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+      }
+      .mark {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #2563eb, #0f172a);
+        margin: 0 auto 24px;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 26px;
+        font-weight: 800;
+      }
+      h1 { font-size: 24px; margin: 0 0 12px; }
+      p { color: #64748b; line-height: 1.7; margin: 0 0 24px; }
+      button {
+        padding: 12px 26px;
+        border: none;
+        border-radius: 10px;
+        background: #2563eb;
+        color: #fff;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="mark">L.</div>
+      <h1>You're offline</h1>
+      <p>LaunchKit needs an internet connection to load your projects and generate new content. Reconnect and try again.</p>
+      <button onclick="location.reload()">Try again</button>
+    </main>
+  </body>
+</html>
